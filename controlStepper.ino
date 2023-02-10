@@ -1,15 +1,13 @@
-/* Example sketch to control a stepper motor with TB6600 stepper motor driver and Arduino without a library: number of revolutions, speed and direction. More info: https://www.makerguides.com */
-
 // Define stepper motor connections and steps per revolution:
 #define dirPin 2
 #define stepPin 3
-#define stepsPerRevolution 1600
-// angel = 360/stepsPerRevolution
+#define stepsPerRevolution 6400 //set different as different setup in driver
+
 void setup() {
   // Declare pins as output:
   pinMode(stepPin, OUTPUT);
   pinMode(dirPin, OUTPUT);
-  Serial.begin(9600);
+  Serial.begin(115200); // baud rate
 }
 
 void stepperRotate(int angle, bool clockwise){
@@ -21,35 +19,47 @@ void stepperRotate(int angle, bool clockwise){
     digitalWrite(dirPin, LOW);
     Serial.println("Counter Clockwise");
   }
-  for (int steps = 0; steps < (360/angle); steps++){
+  int stepsToTake = stepsPerRevolution*angle/360;
+  for (int steps = 0; steps < stepsToTake; steps++){
     digitalWrite(stepPin, HIGH);
     delayMicroseconds(2000);
     digitalWrite(stepPin, LOW);
     delayMicroseconds(2000);
   }
-  Serial.println(angle);
 }
 
-String themBuLuLQua = ""; // string to hold time number
-String func = ""; // string to hold shit thing you want to do
+String inString = ""; // string to hold time number
+String state = ""; // string to hold shit thing you want to do
+String fuckup = "";
 
 void loop() {
-  int action = Serial.read();
-  if (isDigit(action)){
-    themBuLuLQua += (char)action;
-  }
-  else{
-    if (action > -1){ func += (char)action; }
-  }
-  if (action == "\n"){
-    if (func == "tien"){
-      stepperRotate(themBuLuLQua.toInt(),true);
+  int inChar = Serial.read();
+    if (isDigit(inChar)) {
+      // convert the incoming byte to a char and add it to the string:
+      inString += (char)inChar;
     }
-    if (func == "lui"){
-      stepperRotate(themBuLuLQua.toInt(),false);
+    else 
+    {
+      if (inChar > -1) state += (char)inChar;
+      //Serial.println(state);
     }
-
-  }
+    if (state == "Lui" || state == "Tien") 
+    {
+    Serial.println(state);
+    fuckup = state;
+    state = "";
+    }
+    if (inChar == '\n') 
+    {
+      Serial.print("Value:");
+      Serial.println(inString.toInt());
+      if (fuckup == "Lui"){ stepperRotate(inString.toInt(),false);}
+      if (fuckup == "Tien"){ stepperRotate(inString.toInt(),true);}
+      Serial.println("done");
+      state = "";
+      fuckup = "";
+      inString = "";
+    }
 //  Serial.println(action);
 //  Serial.println(themBuLuLQua);
 //  Serial.println(func);
